@@ -81,17 +81,36 @@ def pdbTorsion(pdb):
         sys.stderr.write(err)
 
 
-    # Calculate phi and psi for each residue.  If the calculation fails, write
+    # Calculate phi, psi and omega for each residue.  If the calculation fails, write
     # that to standard error and move on.
     labels = []
     dihedrals = []
+
+    # the first residue, which does not have phi
+    try:
+        dihedrals.append(geometry.calcDihedrals(None,N[0],CA[0],CO[0],
+                                                    N[1],CA[1]))
+        labels.append(residue_list[0])
+    except ValueError:
+        err = "Dihedral calculation failed for %s\n" % residue_list[i]
+        sys.stderr.write(err)
+
+    # all intermediate residues                                            
     for i in range(1,len(residue_list)-1):
         try:
             dihedrals.append(geometry.calcDihedrals(CO[i-1],N[i],CA[i],CO[i],
-                                                    N[i+1]))
+                                                    N[i+1],CA[i+1]))
             labels.append(residue_list[i])
         except ValueError:
             err = "Dihedral calculation failed for %s\n" % residue_list[i]
             sys.stderr.write(err)
 
+    # the last residue, which does not have psi and omega
+    try:
+        dihedrals.append(geometry.calcDihedrals(CO[-2],N[-1],CA[-1],CO[-1],
+                                                    None,None))
+        labels.append(residue_list[-1])
+    except ValueError:
+        err = "Dihedral calculation failed for %s\n" % residue_list[i]
+        sys.stderr.write(err)
     return dihedrals, labels

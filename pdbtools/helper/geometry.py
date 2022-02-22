@@ -11,7 +11,7 @@ A set of geometry functions for manipulating pdb files.
 __author__ = "Michael J. Harms"
 __date__ = "080201"
 
-from math import sqrt, cos, sin, acos, pi
+from math import sqrt, cos, sin, acos, pi, nan
 
 def dist(c1,c2=[0.,0.,0.]):
     """
@@ -186,16 +186,19 @@ def calcHG(CB_coord,SG_coord):
 
     return HG_coord
 
-def calcDihedrals(prevCO,currN,currCA,currCO,nextN,cutoff=6.5):
+def calcDihedrals(prevCO,currN,currCA,currCO,nextN, nextCA,cutoff=6.5):
     """
     Calculates phi and psi angles for an individual residue.
     """
 
-    # Set CA coordinates to origin
-    A = [prevCO[i] - currCA[i] for i in range(3)]
-    B = [currN[i] - currCA[i] for i in range(3)]
-    C = [currCO[i] - currCA[i] for i in range(3)]
-    D = [nextN[i] - currCA[i] for i in range(3)]
+    # Get relative coords
+    CA_N = [currN[i] - currCA[i] for i in range(3)]
+    CA_C = [currCO[i] - currCA[i] for i in range(3)]
+    if prevCO is not None:
+        Cm1_N = [currN[i] - prevCO[i] for i in range(3)]
+    if nextN is not None and nextCA is not None:
+        Np1_C = [currCO[i] - nextN[i] for i in range(3)]
+        Np1_CAp1 = [nextCA[i] - nextN[i] for i in range(3)]
 
     # Make sure the atoms are close enough
     #if max([dist_sq(x) for x in [A,B,C,D]]) > cutoff:
@@ -203,18 +206,31 @@ def calcDihedrals(prevCO,currN,currCA,currCO,nextN,cutoff=6.5):
     #    raise ValueError(err)
 
     # Calculate necessary cross products (define vectors normal to planes)
-    V1 = crossProduct(A,B)
-    V2 = crossProduct(C,B)
-    V3 = crossProduct(C,D)
+    if prevCO is not None:
+        Cm1_N_CA = crossProduct(Cm1_N,CA_N)
+    N_CA_C = crossProduct(CA_N,CA_C)
+    if nextN is not None and nextCA is not None:
+        CA_C_Np1 = crossProduct(CA_C,Np1_C)
+        C_Np1_CAp1 = crossProduct(Np1_C,Np1_CAp1)
 
     # Determine scalar angle between normal vectors
-    phi = findAngle(V1,V2)
-    if dotProduct(A,V2) > 0: phi = -phi
+    if prevCO is not None:
+        phi = findAngle(Cm1_N_CA,N_CA_C)
+        if dotProduct(Cm1_N,N_CA_C) > 0: phi = -phi
+    else:
+        phi = nan
 
-    psi = findAngle(V2,V3)
-    if dotProduct(D,V2) < 0: psi = -psi
+    if nextN is not None and nextCA is not None:
+        psi = findAngle(N_CA_C,CA_C_Np1)
+        if dotProduct(CA_N,CA_C_Np1) < 0: psi = -psi
 
-    return phi, psi
+        omega = findAngle(CA_C_Np1,C_Np1_CAp1)
+        if dotProduct(CA_C, C_Np1_CAp1) > 0: omega = -omega
+    else:
+        psi = omega = nan
+
+    return phi, psi, omega
+
 
 
 def calcHN(prevCO,prevO,currN,currCA):
