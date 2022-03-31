@@ -44,6 +44,16 @@ def calcDistances(coord):
 
     return d
 
+def calcAngle(a,b,c):
+    """
+    Calculates the angle defined by the three points a,b,c
+    """
+
+    ba = [a[i] - b[i] for i in range(3)]
+    bc = [c[i] - b[i] for i in range(3)]
+    angle = findAngle(ba, bc)
+    return angle
+
 def crossProduct(u,v):
     """
     Calculates the cross product of two 3d vectors (as 1-d arrays).
