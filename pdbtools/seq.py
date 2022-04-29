@@ -105,7 +105,7 @@ def convertModifiedAA(chain_dict,pdb):
     return chain_dict
 
 
-def pdbSeq2Fasta(pdb,pdb_id="",chain="all",use_atoms=False):
+def pdbSeq2Fasta(pdb,pdb_id="",chain="all",use_atoms=False, full_fasta=True):
     """
     Extract sequence from pdb file and write out in FASTA format.
     """
@@ -137,7 +137,8 @@ def pdbSeq2Fasta(pdb,pdb_id="",chain="all",use_atoms=False):
 
     out = []
     for c in chains_to_write:
-        out.append(">%s%s_%s" % (pdb_id,c,seq_type))
+        if full_fasta:
+            out.append(">%s%s_%s" % (pdb_id,c,seq_type))
 
         # Write output in lines 80 characters long
         seq_length = len(chain_dict[c])
@@ -149,5 +150,7 @@ def pdbSeq2Fasta(pdb,pdb_id="",chain="all",use_atoms=False):
         if out[-1] == "":
             out.pop(-1)
 
-
-    return "\n".join(out)
+    if full_fasta:
+        return "\n".join(out)
+    else:
+        return "".join(out)
