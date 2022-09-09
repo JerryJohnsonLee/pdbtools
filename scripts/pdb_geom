@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+
+# Copyright 2007, Michael J. Harms
+# This program is distributed under General Public License v. 3.  See the file
+# COPYING for a copy of the license.
+
+__description__ = \
+"""
+Determines the bond lengths and bond angles for backbones of a residue in a protein.
+"""
+
+__author__ = "Jie Li"
+__date__ = "220908"
+
+import os, shutil, sys
+from pdbtools.helper import cmdline
+from pdbtools import geometry
+
+def main():
+    """
+    Call if this is called from the command line.
+    """
+
+    cmdline.initializeParser(__description__,__date__)
+
+    file_list, options = cmdline.parseCommandLine()
+
+    out = []
+    for pdb_file in file_list:
+
+        # Read in input file
+        f = open(pdb_file,'r')
+        pdb = f.readlines()
+        f.close()
+
+        # Calculate bond lengths and bond angles
+        blens, bangs, labels = geometry.pdbGeom(pdb)
+
+        # Print out results in pretty fashion
+        short_pdb =  os.path.split(pdb_file)[-1][:-4]
+        for i in range(len(blens)):
+            out.append("%30s%4s \"%s\"%10.2F%10.2F%10.2F%10.2F%10.2F%10.2F\n" %\
+                       (short_pdb,labels[i][:3],labels[i][4:],
+                        blens[i][0],blens[i][1],blens[i][2],
+                        bangs[i][0],bangs[i][1],bangs[i][2]))
+
+    out = ["%10i%s" % (i,x) for i, x in enumerate(out)]
+
+    header = "%10s%30s%4s%8s%10s%10s%10s%10s%10s%10s\n" % (" ","pdb","aa","res","N-CA","CA-C","C-N", "N-CA-C", "CA-C-N", "C-N-CA")
+    out.insert(0,header)
+    print("".join(out))
+
+
+if __name__ == "__main__":
+    main()
